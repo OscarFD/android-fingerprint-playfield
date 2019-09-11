@@ -1,0 +1,2 @@
+include ':app', ':biometricauth'
+rootProject.name='Biometric Auth Sample'
