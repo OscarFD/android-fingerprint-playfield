@@ -26,6 +26,7 @@ class BiometricUtilsImp : BiometricUtils {
     }
 
     override fun isFingerprintAvailable(context: Context): Boolean {
+
         val fingerprintManager = FingerprintManagerCompat.from(context)
         return fingerprintManager.hasEnrolledFingerprints()
     }

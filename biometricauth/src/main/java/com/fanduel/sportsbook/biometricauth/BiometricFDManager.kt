@@ -2,10 +2,11 @@ package com.fanduel.sportsbook.biometricauth
 
 import android.annotation.TargetApi
 import android.content.Context
-import android.content.DialogInterface
-import android.hardware.biometrics.BiometricPrompt
 import android.os.Build
 import android.os.CancellationSignal
+import androidx.biometric.BiometricPrompt
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentActivity
 
 
 data class CancelFingerPrintPrompt(var text: String? = null, var action: (() -> Unit)? = null)
@@ -19,18 +20,23 @@ enum class AuthenticationResult {
     AUTH_PROMPT_SUCCESS // Authentication prompt successfully presented
 }
 
-class BiometricManager(
+class BiometricFDManager(
     private val context: Context?,
     private val title: String?,
     private val subtitle: String?,
     private val description: String?,
     private val onAuthenticated: (() -> Unit)?,
     private val onCancel: CancelFingerPrintPrompt?,
-    private val onRejected: (() -> Unit)?
+    private val onRejected: (() -> Unit)?,
+    private val fragment: Fragment?
 ) {
 
     private val biometricUtils = BiometricUtilsImp()
     private val cancellationSignal = CancellationSignal()
+    private val runnable = object : Runnable {
+
+        override fun run() {}
+    }
 
 
     data class Builder(
@@ -40,7 +46,8 @@ class BiometricManager(
         private var description: String? = null,
         private var onAuthenticated: (() -> Unit)? = null,
         private var onCancel: CancelFingerPrintPrompt? = null,
-        private var onRejected: (() -> Unit)? = null
+        private var onRejected: (() -> Unit)? = null,
+        private var fragment: Fragment? = null
     ) {
 
         fun setContext(context: Context) = apply { this.context = context }
@@ -59,9 +66,25 @@ class BiometricManager(
             this.onRejected = callback
         }
 
-        fun build() =
-            BiometricManager(context, title, subtitle, description, onAuthenticated, onCancel, onRejected)
+        fun setFragmentActivity(fragment: Fragment?) = apply { this.fragment = fragment }
 
+        fun build() =
+            BiometricFDManager(
+                context,
+                title,
+                subtitle,
+                description,
+                onAuthenticated,
+                onCancel,
+                onRejected,
+                fragment
+            )
+
+
+    }
+
+    fun biometricAuthAvailable(): Boolean {
+        return biometricUtils.isBiometricPromptEnabled()
     }
 
     //TODO - Tests needed
@@ -91,31 +114,60 @@ class BiometricManager(
             return AuthenticationResult.BIOMETRIC_AUTH_NOT_AVAILABLE
         }
 
-        if (biometricUtils.isBiometricPromptEnabled()) {
-            displayBiometricPromptV28()
-        } else {
-            displayBiometricPromptV23()
-        }
+//        if (biometricUtils.isBiometricPromptEnabled()) {
+//            displayBiometricPromptV28()
+//        } else {
+//            displayBiometricPromptV23()
+//        }
+
+        displayBiometricPrompt()
         return AuthenticationResult.AUTH_PROMPT_SUCCESS
+    }
+
+    fun displayBiometricPrompt() {
+
+//         val test = BiometricPrompt(fragment, BiometricCallBacks(onAuthenticated, onRejected, onRejected))
+//
+//            val prompt = test.PromptInfo.Builder()
+//            .setTitle(title.toString())
+//            .setSubtitle(subtitle.toString())
+//            .setDescription(description.toString())
+//            .setConfirmationRequired(true)
+//            .setDeviceCredentialAllowed(true)
+//            .setNegativeButtonText(
+//                onCancel?.text.toString()
+//            )
+//            .build()
+//
+//       test.authenticate(prompt)
     }
 
     @TargetApi(Build.VERSION_CODES.P)
     fun displayBiometricPromptV28() {
-        BiometricPrompt.Builder(context)
-            .setTitle(title.toString())
-            .setSubtitle(subtitle.toString())
-            .setDescription(description.toString())
-            .setNegativeButton(
-                onCancel?.text.toString(),
-                context!!.mainExecutor,
-                DialogInterface.OnClickListener { dialogInterface, i -> onCancel?.action?.invoke() }
-            )
-            .build()
-            .authenticate(
-                cancellationSignal,
-                context.mainExecutor,
-                BiometricCallBackV28(onAuthenticate = onAuthenticated, onAuthenticationFailed = onRejected)
-            )
+
+        // BiometricPrompt(fragment, onAuthenticated?.invoke(), BiometricPromptV28Imp())
+
+
+
+
+//        BiometricPrompt.Builder(context)
+//            .setTitle(title.toString())
+//            .setSubtitle(subtitle.toString())
+//            .setDescription(description.toString())
+//            .setNegativeButton(
+//                onCancel?.text.toString(),
+//                context!!.mainExecutor,
+//                DialogInterface.OnClickListener { dialogInterface, i -> onCancel?.action?.invoke() }
+//            )
+//            .build()
+//            .authenticate(
+//                cancellationSignal,
+//                context.mainExecutor,
+//                BiometricCallBacks(
+//                    onAuthenticate = onAuthenticated,
+//                    onAuthenticationFailed = onRejected
+//                )
+//            )
     }
 
     fun displayBiometricPromptV23() {}
