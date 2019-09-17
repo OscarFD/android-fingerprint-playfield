@@ -4,9 +4,6 @@ import android.annotation.TargetApi
 import android.content.Context
 import android.os.Build
 import android.os.CancellationSignal
-import androidx.biometric.BiometricPrompt
-import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentActivity
 
 
 data class CancelFingerPrintPrompt(var text: String? = null, var action: (() -> Unit)? = null)
@@ -26,13 +23,12 @@ class BiometricFDManager(
     private val subtitle: String?,
     private val description: String?,
     private val onAuthenticated: (() -> Unit)?,
-    private val onCancel: CancelFingerPrintPrompt?,
     private val onRejected: (() -> Unit)?,
-    private val fragment: Fragment?
+    private val onError: (() -> Unit)?
 ) {
 
-    private val biometricUtils = BiometricUtilsImp()
-    private val cancellationSignal = CancellationSignal()
+
+
     private val runnable = object : Runnable {
 
         override fun run() {}
@@ -45,28 +41,23 @@ class BiometricFDManager(
         private var subtitle: String? = null,
         private var description: String? = null,
         private var onAuthenticated: (() -> Unit)? = null,
-        private var onCancel: CancelFingerPrintPrompt? = null,
         private var onRejected: (() -> Unit)? = null,
-        private var fragment: Fragment? = null
+        private var onError: (() -> Unit)? = null
     ) {
 
         fun setContext(context: Context) = apply { this.context = context }
         fun setTitle(title: String) = apply { this.title = title }
         fun setSubtitle(subtitle: String) = apply { this.subtitle = subtitle }
         fun setDescription(description: String) = apply { this.description = description }
-        fun setOnCancel(text: String, callback: (() -> Unit)?) = apply {
-            this.onCancel = CancelFingerPrintPrompt(text = text, action = callback)
-        }
-
         fun setOnAuthenticated(callback: (() -> Unit)?) = apply {
             this.onAuthenticated = callback
         }
-
         fun setOnRejected(callback: (() -> Unit)?) = apply {
             this.onRejected = callback
         }
-
-        fun setFragmentActivity(fragment: Fragment?) = apply { this.fragment = fragment }
+        fun setOnError(callback: (() -> Unit)?) = apply {
+            this.onError = callback
+        }
 
         fun build() =
             BiometricFDManager(
@@ -75,53 +66,26 @@ class BiometricFDManager(
                 subtitle,
                 description,
                 onAuthenticated,
-                onCancel,
                 onRejected,
-                fragment
+                onError
             )
-
-
     }
 
-    fun biometricAuthAvailable(): Boolean {
-        return biometricUtils.isBiometricPromptEnabled()
-    }
+
 
     //TODO - Tests needed
-    fun authenticate(): AuthenticationResult {
-        if (context == null || title == null || onCancel?.text == null) {
-            println("Biometric Dialog prompt building error")
-            return AuthenticationResult.UNKNOWN_REASON
-        }
+    fun authenticate() {
 
-        if (!biometricUtils.isBiometricPromptEnabled()) {
-            println("Error onBiometricAuthentication: SDK version not supported")
-            return AuthenticationResult.SDK_VERSION_NOT_SUPPORTED
-        }
-
-        if (!biometricUtils.isPermissionGranted(context)) {
-            println("Error onBiometricAuthentication: PermissionNotGranted")
-            return AuthenticationResult.PERMISSION_NOT_GRANTED
-        }
-
-        if (!biometricUtils.isHardwareSupported(context)) {
-            println("Error onBiometricAuthentication: Biometric Auth not supported")
-            return AuthenticationResult.BIOMETRIC_AUTH_NOT_SUPPORTED
-        }
-
-        if (!biometricUtils.isFingerprintAvailable(context)) {
-            println("Error onBiometricAuthentication: Biometric Auth not available")
-            return AuthenticationResult.BIOMETRIC_AUTH_NOT_AVAILABLE
-        }
 
 //        if (biometricUtils.isBiometricPromptEnabled()) {
 //            displayBiometricPromptV28()
 //        } else {
 //            displayBiometricPromptV23()
 //        }
-
-        displayBiometricPrompt()
-        return AuthenticationResult.AUTH_PROMPT_SUCCESS
+        if (context == null || title == null) {
+            println("Biometric Dialog prompt building error")
+            displayBiometricPrompt()
+        }
     }
 
     fun displayBiometricPrompt() {
@@ -148,8 +112,6 @@ class BiometricFDManager(
         // BiometricPrompt(fragment, onAuthenticated?.invoke(), BiometricPromptV28Imp())
 
 
-
-
 //        BiometricPrompt.Builder(context)
 //            .setTitle(title.toString())
 //            .setSubtitle(subtitle.toString())
@@ -172,4 +134,33 @@ class BiometricFDManager(
 
     fun displayBiometricPromptV23() {}
 
+    companion object {
+        private val biometricUtils = BiometricUtilsImp()
+
+        @JvmStatic
+        fun biometricAuthAvailable(context: Context): AuthenticationResult {
+
+            if (!biometricUtils.isBiometricPromptEnabled()) {
+                println("Error onBiometricAuthentication: SDK version not supported")
+                return AuthenticationResult.SDK_VERSION_NOT_SUPPORTED
+            }
+
+            if (!biometricUtils.isPermissionGranted(context)) {
+                println("Error onBiometricAuthentication: PermissionNotGranted")
+                return AuthenticationResult.PERMISSION_NOT_GRANTED
+            }
+
+            if (!biometricUtils.isHardwareSupported(context)) {
+                println("Error onBiometricAuthentication: Biometric Auth not supported")
+                return AuthenticationResult.BIOMETRIC_AUTH_NOT_SUPPORTED
+            }
+
+            if (!biometricUtils.isFingerprintAvailable(context)) {
+                println("Error onBiometricAuthentication: Biometric Auth not available")
+                return AuthenticationResult.BIOMETRIC_AUTH_NOT_AVAILABLE
+            }
+            return AuthenticationResult.AUTH_PROMPT_SUCCESS
+
+        }
+    }
 }

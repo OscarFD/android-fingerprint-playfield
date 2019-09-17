@@ -7,6 +7,7 @@ import android.os.Build
 import androidx.core.app.ActivityCompat
 import androidx.core.hardware.fingerprint.FingerprintManagerCompat
 
+
 class BiometricUtilsImp : BiometricUtils {
 
     override fun isBiometricPromptEnabled(): Boolean {
@@ -29,5 +30,9 @@ class BiometricUtilsImp : BiometricUtils {
 
         val fingerprintManager = FingerprintManagerCompat.from(context)
         return fingerprintManager.hasEnrolledFingerprints()
+    }
+
+    override fun isFaceIDAvailable(context: Context): Boolean {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 }

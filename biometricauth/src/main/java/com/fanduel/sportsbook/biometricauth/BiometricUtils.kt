@@ -12,5 +12,7 @@ interface BiometricUtils {
 
     fun isFingerprintAvailable(context: Context): Boolean
 
+    fun isFaceIDAvailable(context: Context): Boolean
+
 
 }
